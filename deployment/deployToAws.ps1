@@ -21,18 +21,31 @@ $dependenciesZipFileName = "dependencies.zip"
 $s3codeZipFileName = "ara$($appVersion)/$($codeZipFileName)"
 $s3dependenciesZipFileName = "ara$($appVersion)/$($dependenciesZipFileName)"
 
-#todo: check it files already exist in s3
 $codeExistsInS3 = $false
 $dependenciesExistsInS3 = $false
+
+$s3Objects = (aws s3api list-objects-v2 --bucket fraham-terraform --prefix "ara$($appVersion)") | ConvertFrom-Json
+
+if ($null -ne $s3Objects) {
+    foreach ($object in $s3Objects.Contents) {
+        if ($object.Key -ieq $s3codeZipFileName) {
+            $codeExistsInS3 = $true
+        }
+        if ($object.Key -ieq $s3dependenciesZipFileName) {
+            $dependenciesExistsInS3 = $true
+        }
+    }
+}
 
 if (!$codeExistsInS3 -or !$dependenciesExistsInS3) {
 
     Push-Location .\src
 
     npm install
-    if (!(Test-Path .\dependencies\nodejs)){
+    if (!(Test-Path .\dependencies\nodejs)) {
         mkdir .\dependencies\nodejs
-    }else{
+    }
+    else {
         Remove-Item .\dependencies\nodejs\node_modules -Recurse
     }
 
@@ -60,6 +73,15 @@ if (!$codeExistsInS3 -or !$dependenciesExistsInS3) {
     Remove-Item $dependenciesZipFileName
 
     Write-Host "Finished remove zip files"
+
+    Push-Location .\src
+
+    npm install
+    
+    Pop-Location
+}
+else {
+    Write-Host "Skipping uploading of code, code already exists"
 }
 
 terraform init
