@@ -7,6 +7,8 @@ if (process.env.IS_LOCAL) {
     AWS = AWSXRay.captureAWS(require('aws-sdk'));
 }
 
+var helper = require('./helper');
+
 exports.handler = async (event) => {
 
     async function listAlarms(nextToken) {

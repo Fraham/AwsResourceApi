@@ -7,6 +7,8 @@ if (process.env.IS_LOCAL) {
     AWS = AWSXRay.captureAWS(require('aws-sdk'));
 }
 
+var helper = require('./helper');
+
 exports.handler = async (event) => {
 
     async function getFunction(functionArn) {
@@ -55,6 +57,8 @@ exports.handler = async (event) => {
     }
 
     var functionArn = null;
+    
+    console.log(JSON.stringify(event));
 
     if (event) {
 
@@ -68,6 +72,10 @@ exports.handler = async (event) => {
 
         if (event.functionArn) {
             functionArn = event.functionArn;
+        }
+        
+        if (event.pathParameters && event.pathParameters.functionarn){
+            functionArn = event.pathParameters.functionarn;
         }
     }
 
