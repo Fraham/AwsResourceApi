@@ -11,6 +11,10 @@ param(
     [string]
     $cloudWatchAlarmTopic = "",
 
+    [Parameter()]
+    [string]
+    $region = "",
+
     [switch]
     $updateModules
 )
@@ -90,4 +94,4 @@ if ($updateModules) {
     terraform get -update
 }
 
-terraform apply -var="bucket=$($s3BucketName)" -var="app_version=$($appVersion)" -var="cloud_watch_alarm_topic=$($cloudWatchAlarmTopic)" -auto-approve
+terraform apply -var="bucket=$($s3BucketName)" -var="app_version=$($appVersion)" -var="cloud_watch_alarm_topic=$($cloudWatchAlarmTopic)" -var="region=$($region)" -auto-approve
