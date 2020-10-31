@@ -23,42 +23,42 @@ exports.handler = async (event) => {
 
         return lambda.getFunction(params).promise();
     }
-
-    async function getLambdaMetric(task) {
-        var cloudWatch = new AWS.CloudWatch({
-            apiVersion: '2010-08-01',
+    
+    async function callLambdaMetrics(functionArn) {
+        var lambda = new AWS.Lambda({
+            apiVersion: '2015-03-31',
             region: process.env.AWS_REGION
         });
 
-        var endTime = new Date();
-        var startTime = new Date();
-        startTime.setMinutes(startTime.getMinutes() - task.Period);
-
-        var functionName = task.functionArn.split(':').slice(-1)[0];
-
         var params = {
-            EndTime: endTime,
-            MetricName: task.Metric,
-            Namespace: 'AWS/Lambda',
-            Period: task.Period * 60,
-            StartTime: startTime,
-            Dimensions: [
-                {
-                    Name: 'FunctionName',
-                    Value: functionName
-                }
-            ],
-            Statistics: [
-                "Sum"
-            ]
+            FunctionName: process.env.GET_LAMBDA_METRICS_ARN,
+            InvocationType: "RequestResponse",
+            Payload: JSON.stringify({
+                functionArn: functionArn
+            })
         };
 
-        return cloudWatch.getMetricStatistics(params).promise();
+        return lambda.invoke(params).promise();
     }
 
-    var functionArn = null;
+    async function callLambdaAlarms(functionArn) {
+        var lambda = new AWS.Lambda({
+            apiVersion: '2015-03-31',
+            region: process.env.AWS_REGION
+        });
+
+        var params = {
+            FunctionName: process.env.GET_LAMBDA_ALARMS_ARN,
+            InvocationType: "RequestResponse",
+            Payload: JSON.stringify({
+                functionArn: functionArn
+            })
+        };
+
+        return lambda.invoke(params).promise();
+    }
     
-    console.log(JSON.stringify(event));
+    var functionArn = null;
 
     if (event) {
 
@@ -84,60 +84,16 @@ exports.handler = async (event) => {
     }
 
     var getFunctionPromise = getFunction(functionArn);
-
-    var getMetrics = [{
-        "Metric": "Invocations",
-        "Period": 60,
-        "functionArn": functionArn
-    },
-    {
-        "Metric": "Errors",
-        "Period": 60,
-        "functionArn": functionArn
-    },
-    {
-        "Metric": "Throttles",
-        "Period": 60,
-        "functionArn": functionArn
-    }, 
-    {
-        "Metric": "Invocations",
-        "Period": 10,
-        "functionArn": functionArn
-    },
-    {
-        "Metric": "Errors",
-        "Period": 10,
-        "functionArn": functionArn
-    },
-    {
-        "Metric": "Throttles",
-        "Period": 10,
-        "functionArn": functionArn
-    }];
-
-    const getMetricsTasks   = getMetrics.map(getLambdaMetric);
-
+    var callLambdaMetricsPromise = callLambdaMetrics(functionArn);
+    var callLambdaAlarmsPromise = callLambdaAlarms(functionArn);
 
     var getFunctionResult = await getFunctionPromise;
-    var getMetricsResults = await Promise.all(getMetricsTasks);
-
-
-    var resultMetrics = [];
-    for (let i = 0; i < getMetricsResults.length; i++) {
-        const element = getMetricsResults[i];
-        
-        resultMetrics.push({
-            "Metric": getMetrics[i].Metric,
-            "Period": getMetrics[i].Period,
-            "Data": element.Datapoints[0] ? element.Datapoints[0].Sum : 0
-        });
-    }
+    var callLambdaMetricsResults = await callLambdaMetricsPromise;
+    var callLambdaAlarmsResults = await callLambdaAlarmsPromise;
 
     var result = getFunctionResult;
-    result.Metrics = resultMetrics;
-
-    console.log(JSON.stringify(result));
+    result.Metrics = helper.parseJsonString(helper.parseJsonString(callLambdaMetricsResults.Payload).body);
+    result.Alarms = helper.parseJsonString(helper.parseJsonString(callLambdaAlarmsResults.Payload).body);    
 
     return {
         statusCode: 200,
