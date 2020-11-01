@@ -495,6 +495,70 @@ resource "aws_iam_role_policy_attachment" "list_api_gateway_access" {
   policy_arn = aws_iam_policy.list_api_gateway_access.arn
 }
 
+resource "aws_lambda_function" "list_api_gateway_resource" {
+  function_name = "${var.project}-ListApiGatewayResource"
+
+  s3_bucket = var.bucket
+  s3_key    = "ara${var.app_version}/code.zip"
+
+  handler = "listApiGatewayResources.handler"
+  runtime = "nodejs12.x"
+
+  role = aws_iam_role.list_api_gateway_resource_exec.arn
+
+  layers = [aws_lambda_layer_version.dependencies.arn]
+
+  tracing_config {
+    mode = "Active"
+  }
+
+  timeout = 30
+}
+
+resource "aws_iam_role" "list_api_gateway_resource_exec" {
+  name = "list_api_gateway_resource_lambda_role"
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+                "Service": "lambda.amazonaws.com"
+            },
+            "Effect": "Allow",
+            "Sid": ""
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "list_api_gateway_resource_access" {
+  name        = "${var.project}-Access-ListApiGatewayResource"
+  path        = "/"
+  description = "IAM policy for ListApiGatewayResource lambda"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "apigateway:GET",
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "list_api_gateway_resource_access" {
+  role       = aws_iam_role.list_api_gateway_resource_exec.name
+  policy_arn = aws_iam_policy.list_api_gateway_resource_access.arn
+}
+
 module "lambda_alarms" {
   source = "github.com/Fraham/TerraformModuleForAws//modules/services/lambda/alarms"
 
@@ -505,7 +569,8 @@ module "lambda_alarms" {
     aws_lambda_function.get_lambda_alarms.function_name,
     aws_lambda_function.list_cloudwatch_alarms.function_name,
     aws_lambda_function.get_cloudwatch_alarm.function_name,
-    aws_lambda_function.list_api_gateway.function_name
+    aws_lambda_function.list_api_gateway.function_name,
+    aws_lambda_function.list_api_gateway_resource.function_name
   ]
   cloud_watch_alarm_topic = var.cloud_watch_alarm_topic
 }
@@ -520,7 +585,8 @@ module "lambda_permissions" {
     aws_iam_role.get_lambda_alarms_exec.name,
     aws_iam_role.list_cloudwatch_alarms_exec.name,
     aws_iam_role.get_cloudwatch_alarm_exec.name,
-    aws_iam_role.list_api_gateway_exec.name
+    aws_iam_role.list_api_gateway_exec.name,
+    aws_iam_role.list_api_gateway_resource_exec.name
   ]
   project    = var.project
   account_id = data.aws_caller_identity.current.account_id
@@ -635,6 +701,21 @@ module "api_list_api_gateway" {
   account_id = data.aws_caller_identity.current.account_id
 }
 
+module "api_list_api_gateway_rest_api_id_resource" {
+  source = "./modules/services/apigateway/method"
+
+  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
+  resource_id   = aws_api_gateway_resource.api_gateway_rest_api_id_resources.id
+  resource_path = aws_api_gateway_resource.api_gateway_rest_api_id_resources.path
+
+  function_name       = aws_lambda_function.list_api_gateway_resource.function_name
+  function_invoke_arn = aws_lambda_function.list_api_gateway_resource.invoke_arn
+
+
+  region     = var.region
+  account_id = data.aws_caller_identity.current.account_id
+}
+
 resource "aws_api_gateway_resource" "lambda" {
   rest_api_id = aws_api_gateway_rest_api.resource_api.id
   parent_id   = aws_api_gateway_rest_api.resource_api.root_resource_id
@@ -677,6 +758,18 @@ resource "aws_api_gateway_resource" "api_gateway" {
   path_part   = "apigateway"
 }
 
+resource "aws_api_gateway_resource" "api_gateway_rest_api_id" {
+  rest_api_id = aws_api_gateway_rest_api.resource_api.id
+  parent_id   = aws_api_gateway_resource.api_gateway.id
+  path_part   = "{restapiid}"
+}
+
+resource "aws_api_gateway_resource" "api_gateway_rest_api_id_resources" {
+  rest_api_id = aws_api_gateway_rest_api.resource_api.id
+  parent_id   = aws_api_gateway_resource.api_gateway_rest_api_id.id
+  path_part   = "resource"
+}
+
 resource "aws_api_gateway_deployment" "dev_deployment" {
   depends_on  = [module.api_list_lambdas.gateway_integration]
   rest_api_id = aws_api_gateway_rest_api.resource_api.id
@@ -690,7 +783,8 @@ resource "aws_api_gateway_deployment" "dev_deployment" {
       jsonencode(module.api_get_lambda_alarms.gateway_integration),
       jsonencode(module.api_list_cloud_watch_alarms.gateway_integration),
       jsonencode(module.api_get_cloud_watch_alarm.gateway_integration),
-      jsonencode(module.api_list_api_gateway.gateway_integration)
+      jsonencode(module.api_list_api_gateway.gateway_integration),
+      jsonencode(module.api_list_api_gateway_rest_api_id_resource.gateway_integration)
     )))
   }
 
