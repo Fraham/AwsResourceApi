@@ -73,27 +73,8 @@ exports.handler = async (event) => {
 
         return null;
     }
-    var alarmArn = null;
-
-    if (event) {
-
-        if (event.body) {
-            let body = helper.parseJsonString(event.body);
-
-            if (body.functionArn) {
-                alarmArn = body.functionArn;
-            }
-        }
-
-        if (event.functionArn) {
-            alarmArn = event.functionArn;
-        }
-
-        if (event.pathParameters && event.pathParameters.alarmarn) {
-            alarmArn = event.pathParameters.alarmarn;
-        }
-    }
-
+    const alarmArn = helper.getParameter(event, "alarmArn");
+    
     if (!alarmArn) {
         throw "No alarm arn passed";
     }

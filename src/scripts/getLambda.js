@@ -57,27 +57,8 @@ exports.handler = async (event) => {
 
         return lambda.invoke(params).promise();
     }
-    
-    var functionArn = null;
 
-    if (event) {
-
-        if (event.body) {
-            let body = helper.parseJsonString(event.body);
-
-            if (body.functionArn) {
-                functionArn = body.functionArn;
-            }
-        }
-
-        if (event.functionArn) {
-            functionArn = event.functionArn;
-        }
-        
-        if (event.pathParameters && event.pathParameters.functionarn){
-            functionArn = event.pathParameters.functionarn;
-        }
-    }
+    const functionArn = helper.getParameter(event, "functionArn");
 
     if (!functionArn) {
         throw "No function arn passed";
