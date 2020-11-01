@@ -46,14 +46,16 @@ exports.handler = async (event) => {
                 continue;
             }
 
+            const alarmarn = alarmArn;
+
             listAlarmsResult.MetricAlarms.forEach(metricAlarm => {                
-                if (metricAlarm.AlarmArn === alarmArn) {
+                if (metricAlarm.AlarmArn === alarmarn) {
                     alarms.push(metricAlarm);
                 }
             });
 
             listAlarmsResult.CompositeAlarms.forEach(compositeAlarm => {
-                if (compositeAlarm.AlarmArn === alarmArn) {
+                if (compositeAlarm.AlarmArn === alarmarn) {
                     alarms.push(compositeAlarm);
                 }
             });
