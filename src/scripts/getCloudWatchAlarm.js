@@ -46,14 +46,16 @@ exports.handler = async (event) => {
                 continue;
             }
 
+            const alarmarn = alarmArn;
+
             listAlarmsResult.MetricAlarms.forEach(metricAlarm => {                
-                if (metricAlarm.AlarmArn === alarmArn) {
+                if (metricAlarm.AlarmArn === alarmarn) {
                     alarms.push(metricAlarm);
                 }
             });
 
             listAlarmsResult.CompositeAlarms.forEach(compositeAlarm => {
-                if (compositeAlarm.AlarmArn === alarmArn) {
+                if (compositeAlarm.AlarmArn === alarmarn) {
                     alarms.push(compositeAlarm);
                 }
             });
@@ -71,27 +73,8 @@ exports.handler = async (event) => {
 
         return null;
     }
-    var alarmArn = null;
-
-    if (event) {
-
-        if (event.body) {
-            let body = helper.parseJsonString(event.body);
-
-            if (body.functionArn) {
-                alarmArn = body.functionArn;
-            }
-        }
-
-        if (event.functionArn) {
-            alarmArn = event.functionArn;
-        }
-
-        if (event.pathParameters && event.pathParameters.alarmarn) {
-            alarmArn = event.pathParameters.alarmarn;
-        }
-    }
-
+    const alarmArn = helper.getParameter(event, "alarmArn");
+    
     if (!alarmArn) {
         throw "No alarm arn passed";
     }

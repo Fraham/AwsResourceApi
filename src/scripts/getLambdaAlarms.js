@@ -33,27 +33,7 @@ exports.handler = async (event) => {
         return cloudWatch.describeAlarmsForMetric(params).promise();
     }
 
-    var functionArn = null;
-
-    event = helper.parseJsonString(event);
-
-    if (event) {
-        if (event.body) {
-            let body = helper.parseJsonString(event.body);
-
-            if (body.functionArn) {
-                functionArn = body.functionArn;
-            }
-        }
-
-        if (event.functionArn) {
-            functionArn = event.functionArn;
-        }
-
-        if (event.pathParameters && event.pathParameters.functionarn) {
-            functionArn = event.pathParameters.functionarn;
-        }
-    }
+    const functionArn = helper.getParameter(event, "functionArn");
 
     if (!functionArn) {
         throw "No function arn passed";

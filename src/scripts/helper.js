@@ -83,5 +83,33 @@ module.exports = {
             TopicArn: topicArn
         };
         snsPublish.publish(params, context.done);
+    },
+    getParameter(event, parameterName) {
+      
+        if (event) {
+            if (event.body) {
+                let body = helper.parseJsonString(event.body);
+    
+                if (body[parameterName]) {
+                    return body[parameterName];
+                }
+            }
+    
+            if (event[parameterName]) {
+                return event[parameterName];
+            }
+            
+            if (event.pathParameters && event.pathParameters[parameterName]){
+                return event.pathParameters[parameterName];
+            }
+        }
+
+        var parameter = this.getParameter(event, parameterName.toLowerCase());
+
+        if (parameter){
+            return parameter;
+        }
+
+        return this.getParameter(event, parameterName.toUpperCase());
     }
 };
