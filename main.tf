@@ -37,24 +37,16 @@ resource "aws_lambda_layer_version" "dependencies" {
   s3_key     = "ara${var.app_version}/dependencies.zip"
 }
 
-resource "aws_lambda_function" "list_lambdas" {
-  function_name = "${var.project}-ListLambdas"
+module "list_lambdas" {
+  source = "./modules/services/lambda"
 
-  s3_bucket = var.bucket
-  s3_key    = "ara${var.app_version}/code.zip"
-
+  lambda_name = "ListLambdas"
+  project = var.project
+  bucket = var.bucket
+  app_version = var.app_version
   handler = "listLambdas.handler"
-  runtime = "nodejs12.x"
-
-  role = aws_iam_role.list_lambdas_exec.arn
-
-  layers = [aws_lambda_layer_version.dependencies.arn]
-
-  tracing_config {
-    mode = "Active"
-  }
-
-  timeout = 30
+  role_arn = aws_iam_role.list_lambdas_exec.arn
+  dependencies_layer_arn = aws_lambda_layer_version.dependencies.arn
 }
 
 resource "aws_iam_role" "list_lambdas_exec" {
@@ -572,7 +564,7 @@ module "lambda_alarms" {
   source = "github.com/Fraham/TerraformModuleForAws//modules/services/lambda/alarms"
 
   function_name = [
-    aws_lambda_function.list_lambdas.function_name,
+    module.list_lambdas.lambda.function_name,
     aws_lambda_function.get_lambda.function_name,
     aws_lambda_function.get_lambda_metrics.function_name,
     aws_lambda_function.get_lambda_alarms.function_name,
@@ -613,9 +605,8 @@ module "api_list_lambdas" {
   resource_id   = aws_api_gateway_resource.lambda.id
   resource_path = aws_api_gateway_resource.lambda.path
 
-  function_name       = aws_lambda_function.list_lambdas.function_name
-  function_invoke_arn = aws_lambda_function.list_lambdas.invoke_arn
-
+  function_name       = module.list_lambdas.lambda.function_name
+  function_invoke_arn = module.list_lambdas.lambda.invoke_arn
 
   region     = var.region
   account_id = data.aws_caller_identity.current.account_id
