@@ -42,7 +42,7 @@ module "lambdas" {
 
   lambdas = {
     "list_lambdas" = {
-      lambda_name = "ListLambdas2"
+      lambda_name = "ListLambdas"
       handler     = "listLambdas.handler"
       policy      = <<EOF
 {
@@ -58,7 +58,7 @@ module "lambdas" {
 EOF
     },
     "get_lambda_metrics" = {
-      lambda_name = "GetLambdaMetrics2"
+      lambda_name = "GetLambdaMetrics"
       handler     = "getLambdaMetrics.handler"
       policy      = <<EOF
 {
@@ -74,7 +74,7 @@ EOF
 EOF
     },
     "get_lambda_alarms" = {
-      lambda_name = "GetLambdaAlarms2"
+      lambda_name = "GetLambdaAlarms"
       handler     = "getLambdaAlarms.handler"
       policy      = <<EOF
 {
@@ -83,6 +83,70 @@ EOF
     {
         "Effect": "Allow",
         "Action": "cloudwatch:DescribeAlarmsForMetric",
+        "Resource": "*"
+    }
+  ]
+}
+EOF
+    },
+    "list_cloudwatch_alarms" = {
+      lambda_name = "ListCloudWatchAlarms"
+      handler     = "getLambdaAlarms.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": "cloudwatch:DescribeAlarms",
+        "Resource": "*"
+    }
+  ]
+}
+EOF
+    },
+    "get_cloudwatch_alarm" = {
+      lambda_name = "GetCloudWatchAlarm"
+      handler     = "getCloudWatchAlarm.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": "cloudwatch:DescribeAlarms",
+        "Resource": "*"
+    }
+  ]
+}
+EOF
+    },
+    "list_api_gateway" = {
+      lambda_name = "ListApiGateway"
+      handler     = "listApiGateways.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": "apigateway:GET",
+        "Resource": "*"
+    }
+  ]
+}
+EOF
+    },
+    "list_api_gateway_resource" = {
+      lambda_name = "ListApiGatewayResource"
+      handler     = "listApiGatewayResources.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": "apigateway:GET",
         "Resource": "*"
     }
   ]
@@ -176,262 +240,6 @@ resource "aws_iam_role_policy_attachment" "get_lambda_access" {
   policy_arn = aws_iam_policy.get_lambda_access.arn
 }
 
-resource "aws_lambda_function" "list_cloudwatch_alarms" {
-  function_name = "${var.project}-ListCloudWatchAlarms"
-
-  s3_bucket = var.bucket
-  s3_key    = "ara${var.app_version}/code.zip"
-
-  handler = "listCloudWatchAlarms.handler"
-  runtime = "nodejs12.x"
-
-  role = aws_iam_role.list_cloudwatch_alarms_exec.arn
-
-  layers = [aws_lambda_layer_version.dependencies.arn]
-
-  tracing_config {
-    mode = "Active"
-  }
-
-  timeout = 30
-}
-
-resource "aws_iam_role" "list_cloudwatch_alarms_exec" {
-  name = "list_cloudwatch_alarms_lambda_role"
-
-  assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "sts:AssumeRole",
-            "Principal": {
-                "Service": "lambda.amazonaws.com"
-            },
-            "Effect": "Allow",
-            "Sid": ""
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "list_cloudwatch_alarms_access" {
-  name        = "${var.project}-Access-ListCloudWatchAlarms"
-  path        = "/"
-  description = "IAM policy for ListCloudWatchAlarms lambda"
-
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "cloudwatch:DescribeAlarms",
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "list_cloudwatch_alarms_access" {
-  role       = aws_iam_role.list_cloudwatch_alarms_exec.name
-  policy_arn = aws_iam_policy.list_cloudwatch_alarms_access.arn
-}
-
-resource "aws_lambda_function" "get_cloudwatch_alarm" {
-  function_name = "${var.project}-GetCloudWatchAlarm"
-
-  s3_bucket = var.bucket
-  s3_key    = "ara${var.app_version}/code.zip"
-
-  handler = "getCloudWatchAlarm.handler"
-  runtime = "nodejs12.x"
-
-  role = aws_iam_role.get_cloudwatch_alarm_exec.arn
-
-  layers = [aws_lambda_layer_version.dependencies.arn]
-
-  tracing_config {
-    mode = "Active"
-  }
-
-  timeout = 30
-}
-
-resource "aws_iam_role" "get_cloudwatch_alarm_exec" {
-  name = "get_cloudwatch_alarm_lambda_role"
-
-  assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "sts:AssumeRole",
-            "Principal": {
-                "Service": "lambda.amazonaws.com"
-            },
-            "Effect": "Allow",
-            "Sid": ""
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "get_cloudwatch_alarm_access" {
-  name        = "${var.project}-Access-GetCloudWatchAlarm"
-  path        = "/"
-  description = "IAM policy for GetCloudWatchAlarm lambda"
-
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "cloudwatch:DescribeAlarms",
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "get_cloudwatch_alarm_access" {
-  role       = aws_iam_role.get_cloudwatch_alarm_exec.name
-  policy_arn = aws_iam_policy.get_cloudwatch_alarm_access.arn
-}
-
-resource "aws_lambda_function" "list_api_gateway" {
-  function_name = "${var.project}-ListApiGateway"
-
-  s3_bucket = var.bucket
-  s3_key    = "ara${var.app_version}/code.zip"
-
-  handler = "listApiGateways.handler"
-  runtime = "nodejs12.x"
-
-  role = aws_iam_role.list_api_gateway_exec.arn
-
-  layers = [aws_lambda_layer_version.dependencies.arn]
-
-  tracing_config {
-    mode = "Active"
-  }
-
-  timeout = 30
-}
-
-resource "aws_iam_role" "list_api_gateway_exec" {
-  name = "list_api_gateway_lambda_role"
-
-  assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "sts:AssumeRole",
-            "Principal": {
-                "Service": "lambda.amazonaws.com"
-            },
-            "Effect": "Allow",
-            "Sid": ""
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "list_api_gateway_access" {
-  name        = "${var.project}-Access-ListApiGateway"
-  path        = "/"
-  description = "IAM policy for ListApiGateway lambda"
-
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "apigateway:GET",
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "list_api_gateway_access" {
-  role       = aws_iam_role.list_api_gateway_exec.name
-  policy_arn = aws_iam_policy.list_api_gateway_access.arn
-}
-
-resource "aws_lambda_function" "list_api_gateway_resource" {
-  function_name = "${var.project}-ListApiGatewayResource"
-
-  s3_bucket = var.bucket
-  s3_key    = "ara${var.app_version}/code.zip"
-
-  handler = "listApiGatewayResources.handler"
-  runtime = "nodejs12.x"
-
-  role = aws_iam_role.list_api_gateway_resource_exec.arn
-
-  layers = [aws_lambda_layer_version.dependencies.arn]
-
-  tracing_config {
-    mode = "Active"
-  }
-
-  timeout = 30
-}
-
-resource "aws_iam_role" "list_api_gateway_resource_exec" {
-  name = "list_api_gateway_resource_lambda_role"
-
-  assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "sts:AssumeRole",
-            "Principal": {
-                "Service": "lambda.amazonaws.com"
-            },
-            "Effect": "Allow",
-            "Sid": ""
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "list_api_gateway_resource_access" {
-  name        = "${var.project}-Access-ListApiGatewayResource"
-  path        = "/"
-  description = "IAM policy for ListApiGatewayResource lambda"
-
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "apigateway:GET",
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "list_api_gateway_resource_access" {
-  role       = aws_iam_role.list_api_gateway_resource_exec.name
-  policy_arn = aws_iam_policy.list_api_gateway_resource_access.arn
-}
-
 module "lambda_alarms" {
   source = "github.com/Fraham/TerraformModuleForAws//modules/services/lambda/alarms"
 
@@ -440,10 +248,10 @@ module "lambda_alarms" {
     aws_lambda_function.get_lambda.function_name,
     module.lambdas.lambdas["get_lambda_metrics"].function_name,
     module.lambdas.lambdas["get_lambda_alarms"].function_name,
-    aws_lambda_function.list_cloudwatch_alarms.function_name,
-    aws_lambda_function.get_cloudwatch_alarm.function_name,
-    aws_lambda_function.list_api_gateway.function_name,
-    aws_lambda_function.list_api_gateway_resource.function_name
+    module.lambdas.lambdas["list_cloudwatch_alarms"].function_name,
+    module.lambdas.lambdas["get_cloudwatch_alarm"].function_name,
+    module.lambdas.lambdas["list_api_gateway"].function_name,
+    module.lambdas.lambdas["list_api_gateway_resource"].function_name
   ]
   cloud_watch_alarm_topic = var.cloud_watch_alarm_topic
 }
@@ -456,10 +264,10 @@ module "lambda_permissions" {
     aws_iam_role.get_lambda_exec.name,
     module.lambdas.roles["get_lambda_metrics"].name,
     module.lambdas.roles["get_lambda_alarms"].name,
-    aws_iam_role.list_cloudwatch_alarms_exec.name,
-    aws_iam_role.get_cloudwatch_alarm_exec.name,
-    aws_iam_role.list_api_gateway_exec.name,
-    aws_iam_role.list_api_gateway_resource_exec.name
+    module.lambdas.roles["list_cloudwatch_alarms"].name,
+    module.lambdas.roles["get_cloudwatch_alarm"].name,
+    module.lambdas.roles["list_api_gateway"].name,
+    module.lambdas.roles["list_api_gateway_resource"].name
   ]
   project    = var.project
   account_id = data.aws_caller_identity.current.account_id
@@ -536,8 +344,8 @@ module "api_list_cloud_watch_alarms" {
   resource_id   = aws_api_gateway_resource.cloud_watch_alarms.id
   resource_path = aws_api_gateway_resource.cloud_watch_alarms.path
 
-  function_name       = aws_lambda_function.list_cloudwatch_alarms.function_name
-  function_invoke_arn = aws_lambda_function.list_cloudwatch_alarms.invoke_arn
+  function_name       = module.lambdas.lambdas["list_cloudwatch_alarms"].function_name
+  function_invoke_arn = module.lambdas.lambdas["list_cloudwatch_alarms"].invoke_arn
 
 
   region     = var.region
@@ -551,8 +359,8 @@ module "api_get_cloud_watch_alarm" {
   resource_id   = aws_api_gateway_resource.cloud_watch_alarmarn.id
   resource_path = aws_api_gateway_resource.cloud_watch_alarmarn.path
 
-  function_name       = aws_lambda_function.get_cloudwatch_alarm.function_name
-  function_invoke_arn = aws_lambda_function.get_cloudwatch_alarm.invoke_arn
+  function_name       = module.lambdas.lambdas["get_cloudwatch_alarm"].function_name
+  function_invoke_arn = module.lambdas.lambdas["get_cloudwatch_alarm"].invoke_arn
 
   region     = var.region
   account_id = data.aws_caller_identity.current.account_id
@@ -565,8 +373,8 @@ module "api_list_api_gateway" {
   resource_id   = aws_api_gateway_resource.api_gateway.id
   resource_path = aws_api_gateway_resource.api_gateway.path
 
-  function_name       = aws_lambda_function.list_api_gateway.function_name
-  function_invoke_arn = aws_lambda_function.list_api_gateway.invoke_arn
+  function_name       = module.lambdas.lambdas["list_api_gateway"].function_name
+  function_invoke_arn = module.lambdas.lambdas["list_api_gateway"].invoke_arn
 
 
   region     = var.region
@@ -580,8 +388,8 @@ module "api_list_api_gateway_rest_api_id_resource" {
   resource_id   = aws_api_gateway_resource.api_gateway_rest_api_id_resources.id
   resource_path = aws_api_gateway_resource.api_gateway_rest_api_id_resources.path
 
-  function_name       = aws_lambda_function.list_api_gateway_resource.function_name
-  function_invoke_arn = aws_lambda_function.list_api_gateway_resource.invoke_arn
+  function_name       = module.lambdas.lambdas["list_api_gateway_resource"].function_name
+  function_invoke_arn = module.lambdas.lambdas["list_api_gateway_resource"].invoke_arn
 
 
   region     = var.region
