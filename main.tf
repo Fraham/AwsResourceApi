@@ -44,7 +44,6 @@ module "lambdas" {
     "list_lambdas" = {
       lambda_name = "ListLambdas2"
       handler = "listLambdas.handler"
-      role_arn = aws_iam_role.list_lambdas_exec.arn
     }
   }
 
@@ -55,28 +54,7 @@ module "lambdas" {
 }
 
 output "lambdas"{
-  value = module.lambdas.lambdas
-}
-
-resource "aws_iam_role" "list_lambdas_exec" {
-  name = "list_lambdas_lambda_role"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-
+  value = module.lambdas
 }
 
 resource "aws_iam_policy" "list_lambdas_access" {
@@ -99,7 +77,7 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "list_lambdas_access" {
-  role       = aws_iam_role.list_lambdas_exec.name
+  role       = module.lambdas.roles["list_lambdas"].name
   policy_arn = aws_iam_policy.list_lambdas_access.arn
 }
 
@@ -589,7 +567,7 @@ module "lambda_permissions" {
   source = "github.com/Fraham/TerraformModuleForAws//modules/services/lambda/permissions"
 
   role_name = [    
-    aws_iam_role.list_lambdas_exec.name,
+    module.lambdas.roles["list_lambdas"].name,
     aws_iam_role.get_lambda_exec.name,
     aws_iam_role.get_lambda_metrics_exec.name,
     aws_iam_role.get_lambda_alarms_exec.name,
