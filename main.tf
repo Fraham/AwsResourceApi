@@ -152,72 +152,11 @@ EOF
   ]
 }
 EOF
-    }
-  }
-
-  project                = var.project
-  bucket                 = var.bucket
-  app_version            = var.app_version
-  dependencies_layer_arn = aws_lambda_layer_version.dependencies.arn
-}
-
-output "lambda_names" {
-  value = values(module.lambdas.lambdas)[*].function_name
-}
-
-resource "aws_lambda_function" "get_lambda" {
-  function_name = "${var.project}-GetLambda"
-
-  s3_bucket = var.bucket
-  s3_key    = "ara${var.app_version}/code.zip"
-
-  handler = "getLambda.handler"
-  runtime = "nodejs12.x"
-
-  role = aws_iam_role.get_lambda_exec.arn
-
-  layers = [aws_lambda_layer_version.dependencies.arn]
-
-  tracing_config {
-    mode = "Active"
-  }
-
-  timeout = 30
-
-  environment {
-    variables = {
-      GET_LAMBDA_METRICS_ARN = module.lambdas.lambdas["get_lambda_metrics"].arn,
-      GET_LAMBDA_ALARMS_ARN  = module.lambdas.lambdas["get_lambda_alarms"].arn,
-    }
-  }
-}
-
-resource "aws_iam_role" "get_lambda_exec" {
-  name = "get_lambda_lambda_role"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "get_lambda_access" {
-  name        = "${var.project}-Access-GetLambda"
-  path        = "/"
-  description = "IAM policy for GetLambda lambda"
-
-  policy = <<EOF
+    },
+    "get_lambda" = {
+      lambda_name = "GetLambda2"
+      handler     = "getLambda.handler"
+      policy      = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -233,44 +172,19 @@ resource "aws_iam_policy" "get_lambda_access" {
   ]
 }
 EOF
-}
+    }
+  }
 
-resource "aws_iam_role_policy_attachment" "get_lambda_access" {
-  role       = aws_iam_role.get_lambda_exec.name
-  policy_arn = aws_iam_policy.get_lambda_access.arn
-}
-
-module "lambda_alarms" {
-  source = "github.com/Fraham/TerraformModuleForAws//modules/services/lambda/alarms"
-
-  function_name = [
-    module.lambdas.lambdas["list_lambdas"].function_name,
-    aws_lambda_function.get_lambda.function_name,
-    module.lambdas.lambdas["get_lambda_metrics"].function_name,
-    module.lambdas.lambdas["get_lambda_alarms"].function_name,
-    module.lambdas.lambdas["list_cloudwatch_alarms"].function_name,
-    module.lambdas.lambdas["get_cloudwatch_alarm"].function_name,
-    module.lambdas.lambdas["list_api_gateway"].function_name,
-    module.lambdas.lambdas["list_api_gateway_resource"].function_name
-  ]
+  project                = var.project
+  bucket                 = var.bucket
+  app_version            = var.app_version
+  dependencies_layer_arn = aws_lambda_layer_version.dependencies.arn
+  account_id             = data.aws_caller_identity.current.account_id
   cloud_watch_alarm_topic = var.cloud_watch_alarm_topic
 }
 
-module "lambda_permissions" {
-  source = "github.com/Fraham/TerraformModuleForAws//modules/services/lambda/permissions"
-
-  role_name = [
-    module.lambdas.roles["list_lambdas"].name,
-    aws_iam_role.get_lambda_exec.name,
-    module.lambdas.roles["get_lambda_metrics"].name,
-    module.lambdas.roles["get_lambda_alarms"].name,
-    module.lambdas.roles["list_cloudwatch_alarms"].name,
-    module.lambdas.roles["get_cloudwatch_alarm"].name,
-    module.lambdas.roles["list_api_gateway"].name,
-    module.lambdas.roles["list_api_gateway_resource"].name
-  ]
-  project    = var.project
-  account_id = data.aws_caller_identity.current.account_id
+output "lambda_names" {
+  value = values(module.lambdas.lambdas)[*].function_name
 }
 
 resource "aws_api_gateway_rest_api" "resource_api" {
@@ -299,8 +213,8 @@ module "api_get_lambda" {
   resource_id   = aws_api_gateway_resource.lambda_functionarn.id
   resource_path = aws_api_gateway_resource.lambda_functionarn.path
 
-  function_name       = aws_lambda_function.get_lambda.function_name
-  function_invoke_arn = aws_lambda_function.get_lambda.invoke_arn
+  function_name       = module.lambdas.lambdas["get_lambda"].function_name
+  function_invoke_arn = module.lambdas.lambdas["get_lambda"].invoke_arn
 
 
   region     = var.region

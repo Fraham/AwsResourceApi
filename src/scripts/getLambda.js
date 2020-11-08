@@ -31,7 +31,7 @@ exports.handler = async (event) => {
         });
 
         var params = {
-            FunctionName: process.env.GET_LAMBDA_METRICS_ARN,
+            FunctionName: "ARA-GetLambdaMetrics",
             InvocationType: "RequestResponse",
             Payload: JSON.stringify({
                 functionArn: functionArn
@@ -48,7 +48,7 @@ exports.handler = async (event) => {
         });
 
         var params = {
-            FunctionName: process.env.GET_LAMBDA_ALARMS_ARN,
+            FunctionName: "ARA-GetLambdaAlarms",
             InvocationType: "RequestResponse",
             Payload: JSON.stringify({
                 functionArn: functionArn
