@@ -1,13 +1,22 @@
 provider "aws" {
-  region = "eu-west-1"
+  region = var.region
 }
 
 variable "bucket" {
+  type        = string
+  description = "S3 bucket where lambda code is stored"
 }
+
 variable "region" {
+  type        = string
+  description = "The AWS region the resource API is being deployed to"
 }
+
 variable "app_version" {
+  type        = string
+  description = "The version of the lambda code"
 }
+
 variable "cloud_watch_alarm_topic" {
   type        = string
   description = "The SNS topic for CloudWatch alarms"
