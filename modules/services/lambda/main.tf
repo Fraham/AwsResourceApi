@@ -1,13 +1,15 @@
-resource "aws_lambda_function" "lambda" {
-  function_name = "${var.project}-${var.lambda_name}"
+resource "aws_lambda_function" "lambdas" {
+  for_each = var.lambdas
+
+  function_name = "${var.project}-${each.value.lambda_name}"
 
   s3_bucket = var.bucket
   s3_key    = "ara${var.app_version}/code.zip"
 
-  handler = var.handler
+  handler = each.value.handler
   runtime = "nodejs12.x"
 
-  role = var.role_arn
+  role = each.value.role_arn
 
   layers = [var.dependencies_layer_arn]
 
