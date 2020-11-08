@@ -154,7 +154,7 @@ EOF
 EOF
     },
     "get_lambda" = {
-      lambda_name = "GetLambda2"
+      lambda_name = "GetLambda"
       handler     = "getLambda.handler"
       policy      = <<EOF
 {
