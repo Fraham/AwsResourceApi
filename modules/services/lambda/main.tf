@@ -58,3 +58,18 @@ resource "aws_iam_role_policy_attachment" "lambda_access" {
   role       = aws_iam_role.lambda_exec[each.key].name
   policy_arn = aws_iam_policy.lambda_access[each.key].arn
 }
+
+module "lambda_alarms" {
+  source = "github.com/Fraham/TerraformModuleForAws//modules/services/lambda/alarms"
+
+  function_name           = values(aws_lambda_function.lambdas)[*].function_name
+  cloud_watch_alarm_topic = var.cloud_watch_alarm_topic
+}
+
+module "lambda_permissions" {
+  source = "github.com/Fraham/TerraformModuleForAws//modules/services/lambda/permissions"
+
+  role_name = values(aws_iam_role.lambda_exec)[*].name
+  project    = var.project
+  account_id = var.account_id
+}

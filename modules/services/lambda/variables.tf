@@ -37,3 +37,13 @@ variable "bucket" {
 variable "lambdas"{
     type = map
 }
+
+variable "account_id"{
+    type        = string
+}
+
+variable "cloud_watch_alarm_topic" {
+  type        = string
+  description = "The SNS topic for CloudWatch alarms"
+  default     = ""
+}
