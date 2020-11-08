@@ -23,7 +23,7 @@ resource "aws_lambda_function" "lambdas" {
 resource "aws_iam_role" "lambda_exec" {
   for_each = var.lambdas
 
-  name = "${var.project}-${each.value.lambda_name}_lambda_role"
+  name = "${var.project}-${each.value.lambda_name}-LambdaRole"
 
   assume_role_policy = <<EOF
 {
@@ -40,4 +40,21 @@ resource "aws_iam_role" "lambda_exec" {
   ]
 }
 EOF
+}
+
+resource "aws_iam_policy" "lambda_access" {
+  for_each = var.lambdas
+
+  name        = "${var.project}-${each.value.lambda_name}-Access"
+  path        = "/"
+  description = "IAM policy for ${each.value.lambda_name} lambda"
+
+  policy = each.value.policy
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_access" {
+  for_each = var.lambdas
+
+  role       = aws_iam_role.lambda_exec[each.key].name
+  policy_arn = aws_iam_policy.lambda_access[each.key].arn
 }
