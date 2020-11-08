@@ -72,6 +72,22 @@ EOF
   ]
 }
 EOF
+    },
+    "get_lambda_alarms" = {
+      lambda_name = "GetLambdaAlarms2"
+      handler     = "getLambdaAlarms.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": "cloudwatch:DescribeAlarmsForMetric",
+        "Resource": "*"
+    }
+  ]
+}
+EOF
     }
   }
 
@@ -107,7 +123,7 @@ resource "aws_lambda_function" "get_lambda" {
   environment {
     variables = {
       GET_LAMBDA_METRICS_ARN = module.lambdas.lambdas["get_lambda_metrics"].arn,
-      GET_LAMBDA_ALARMS_ARN  = aws_lambda_function.get_lambda_alarms.arn,
+      GET_LAMBDA_ALARMS_ARN  = module.lambdas.lambdas["get_lambda_alarms"].arn,
     }
   }
 }
@@ -130,7 +146,6 @@ resource "aws_iam_role" "get_lambda_exec" {
   ]
 }
 EOF
-
 }
 
 resource "aws_iam_policy" "get_lambda_access" {
@@ -159,73 +174,6 @@ EOF
 resource "aws_iam_role_policy_attachment" "get_lambda_access" {
   role       = aws_iam_role.get_lambda_exec.name
   policy_arn = aws_iam_policy.get_lambda_access.arn
-}
-
-resource "aws_lambda_function" "get_lambda_alarms" {
-  function_name = "${var.project}-GetLambdaAlarms"
-
-  s3_bucket = var.bucket
-  s3_key    = "ara${var.app_version}/code.zip"
-
-  handler = "getLambdaAlarms.handler"
-  runtime = "nodejs12.x"
-
-  role = aws_iam_role.get_lambda_alarms_exec.arn
-
-  layers = [aws_lambda_layer_version.dependencies.arn]
-
-  tracing_config {
-    mode = "Active"
-  }
-
-  timeout = 30
-}
-
-resource "aws_iam_role" "get_lambda_alarms_exec" {
-  name = "get_lambda_alarms_lambda_role"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-
-}
-
-resource "aws_iam_policy" "get_lambda_alarms_access" {
-  name        = "${var.project}-Access-GetLambdaAlarms"
-  path        = "/"
-  description = "IAM policy for GetLambdaAlarms lambda"
-
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-        "Effect": "Allow",
-        "Action": [
-            "cloudwatch:DescribeAlarmsForMetric"
-        ],
-        "Resource": "*"
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "get_lambda_alarms_access" {
-  role       = aws_iam_role.get_lambda_alarms_exec.name
-  policy_arn = aws_iam_policy.get_lambda_alarms_access.arn
 }
 
 resource "aws_lambda_function" "list_cloudwatch_alarms" {
@@ -491,7 +439,7 @@ module "lambda_alarms" {
     module.lambdas.lambdas["list_lambdas"].function_name,
     aws_lambda_function.get_lambda.function_name,
     module.lambdas.lambdas["get_lambda_metrics"].function_name,
-    aws_lambda_function.get_lambda_alarms.function_name,
+    module.lambdas.lambdas["get_lambda_alarms"].function_name,
     aws_lambda_function.list_cloudwatch_alarms.function_name,
     aws_lambda_function.get_cloudwatch_alarm.function_name,
     aws_lambda_function.list_api_gateway.function_name,
@@ -507,7 +455,7 @@ module "lambda_permissions" {
     module.lambdas.roles["list_lambdas"].name,
     aws_iam_role.get_lambda_exec.name,
     module.lambdas.roles["get_lambda_metrics"].name,
-    aws_iam_role.get_lambda_alarms_exec.name,
+    module.lambdas.roles["get_lambda_alarms"].name,
     aws_iam_role.list_cloudwatch_alarms_exec.name,
     aws_iam_role.get_cloudwatch_alarm_exec.name,
     aws_iam_role.list_api_gateway_exec.name,
@@ -573,8 +521,8 @@ module "api_get_lambda_alarms" {
   resource_id   = aws_api_gateway_resource.lambda_functionarn_alarms.id
   resource_path = aws_api_gateway_resource.lambda_functionarn_alarms.path
 
-  function_name       = aws_lambda_function.get_lambda_alarms.function_name
-  function_invoke_arn = aws_lambda_function.get_lambda_alarms.invoke_arn
+  function_name       = module.lambdas.lambdas["get_lambda_alarms"].function_name
+  function_invoke_arn = module.lambdas.lambdas["get_lambda_alarms"].invoke_arn
 
 
   region     = var.region
