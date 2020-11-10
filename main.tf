@@ -169,10 +169,10 @@ EOF
     }
   }
 
-  project                = var.project
-  bucket                 = var.bucket
-  app_version            = var.app_version
-  account_id             = data.aws_caller_identity.current.account_id
+  project                 = var.project
+  bucket                  = var.bucket
+  app_version             = var.app_version
+  account_id              = data.aws_caller_identity.current.account_id
   cloud_watch_alarm_topic = var.cloud_watch_alarm_topic
 }
 
@@ -185,122 +185,48 @@ resource "aws_api_gateway_rest_api" "resource_api" {
   description = "The REST resource API"
 }
 
-module "api_list_lambdas" {
-  source = "./modules/services/apigateway/method"
+module "api_gateway_rest_api_id_methods" {
+  source = "./modules/services/apigateway/method2"
 
-  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
-  resource_id   = aws_api_gateway_resource.lambda.id
-  resource_path = aws_api_gateway_resource.lambda.path
+  region      = var.region
+  account_id  = data.aws_caller_identity.current.account_id
+  rest_api_id = aws_api_gateway_rest_api.resource_api.id
+  lambdas     = module.lambdas.lambdas
 
-  function_name       = module.lambdas.lambdas["list_lambdas"].function_name
-  function_invoke_arn = module.lambdas.lambdas["list_lambdas"].invoke_arn
-
-  region     = var.region
-  account_id = data.aws_caller_identity.current.account_id
-}
-
-module "api_get_lambda" {
-  source = "./modules/services/apigateway/method"
-
-  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
-  resource_id   = aws_api_gateway_resource.lambda_functionarn.id
-  resource_path = aws_api_gateway_resource.lambda_functionarn.path
-
-  function_name       = module.lambdas.lambdas["get_lambda"].function_name
-  function_invoke_arn = module.lambdas.lambdas["get_lambda"].invoke_arn
-
-
-  region     = var.region
-  account_id = data.aws_caller_identity.current.account_id
-}
-
-module "api_get_lambda_metrics" {
-  source = "./modules/services/apigateway/method"
-
-  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
-  resource_id   = aws_api_gateway_resource.lambda_functionarn_metrics.id
-  resource_path = aws_api_gateway_resource.lambda_functionarn_metrics.path
-
-  function_name       = module.lambdas.lambdas["get_lambda_metrics"].function_name
-  function_invoke_arn = module.lambdas.lambdas["get_lambda_metrics"].invoke_arn
-
-
-  region     = var.region
-  account_id = data.aws_caller_identity.current.account_id
-}
-
-module "api_get_lambda_alarms" {
-  source = "./modules/services/apigateway/method"
-
-  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
-  resource_id   = aws_api_gateway_resource.lambda_functionarn_alarms.id
-  resource_path = aws_api_gateway_resource.lambda_functionarn_alarms.path
-
-  function_name       = module.lambdas.lambdas["get_lambda_alarms"].function_name
-  function_invoke_arn = module.lambdas.lambdas["get_lambda_alarms"].invoke_arn
-
-
-  region     = var.region
-  account_id = data.aws_caller_identity.current.account_id
-}
-
-module "api_list_cloud_watch_alarms" {
-  source = "./modules/services/apigateway/method"
-
-  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
-  resource_id   = aws_api_gateway_resource.cloud_watch_alarms.id
-  resource_path = aws_api_gateway_resource.cloud_watch_alarms.path
-
-  function_name       = module.lambdas.lambdas["list_cloudwatch_alarms"].function_name
-  function_invoke_arn = module.lambdas.lambdas["list_cloudwatch_alarms"].invoke_arn
-
-
-  region     = var.region
-  account_id = data.aws_caller_identity.current.account_id
-}
-
-module "api_get_cloud_watch_alarm" {
-  source = "./modules/services/apigateway/method"
-
-  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
-  resource_id   = aws_api_gateway_resource.cloud_watch_alarmarn.id
-  resource_path = aws_api_gateway_resource.cloud_watch_alarmarn.path
-
-  function_name       = module.lambdas.lambdas["get_cloudwatch_alarm"].function_name
-  function_invoke_arn = module.lambdas.lambdas["get_cloudwatch_alarm"].invoke_arn
-
-  region     = var.region
-  account_id = data.aws_caller_identity.current.account_id
-}
-
-module "api_list_api_gateway" {
-  source = "./modules/services/apigateway/method"
-
-  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
-  resource_id   = aws_api_gateway_resource.api_gateway.id
-  resource_path = aws_api_gateway_resource.api_gateway.path
-
-  function_name       = module.lambdas.lambdas["list_api_gateway"].function_name
-  function_invoke_arn = module.lambdas.lambdas["list_api_gateway"].invoke_arn
-
-
-  region     = var.region
-  account_id = data.aws_caller_identity.current.account_id
-}
-
-module "api_list_api_gateway_rest_api_id_resource" {
-  source = "./modules/services/apigateway/method"
-
-  rest_api_id   = aws_api_gateway_rest_api.resource_api.id
-  resource_id   = aws_api_gateway_resource.api_gateway_rest_api_id_resources.id
-  resource_path = aws_api_gateway_resource.api_gateway_rest_api_id_resources.path
-
-  function_name       = module.lambdas.lambdas["list_api_gateway_resource"].function_name
-  function_invoke_arn = module.lambdas.lambdas["list_api_gateway_resource"].invoke_arn
-
-
-  region     = var.region
-  account_id = data.aws_caller_identity.current.account_id
+  methods = {
+    "list_lambdas" = {
+      resource_id   = aws_api_gateway_resource.lambda.id
+      resource_path = aws_api_gateway_resource.lambda.path
+    },
+    "get_lambda" = {
+      resource_id   = aws_api_gateway_resource.lambda_functionarn.id
+      resource_path = aws_api_gateway_resource.lambda_functionarn.path
+    },
+    "get_lambda_metrics" = {
+      resource_id   = aws_api_gateway_resource.lambda_functionarn_metrics.id
+      resource_path = aws_api_gateway_resource.lambda_functionarn_metrics.path
+    },
+    "get_lambda_alarms" = {
+      resource_id   = aws_api_gateway_resource.lambda_functionarn_alarms.id
+      resource_path = aws_api_gateway_resource.lambda_functionarn_alarms.path
+    },
+    "list_cloudwatch_alarms" = {
+      resource_id   = aws_api_gateway_resource.cloud_watch_alarms.id
+      resource_path = aws_api_gateway_resource.cloud_watch_alarms.path
+    },
+    "get_cloudwatch_alarm" = {
+      resource_id   = aws_api_gateway_resource.cloud_watch_alarmarn.id
+      resource_path = aws_api_gateway_resource.cloud_watch_alarmarn.path
+    },
+    "list_api_gateway" = {
+      resource_id   = aws_api_gateway_resource.api_gateway.id
+      resource_path = aws_api_gateway_resource.api_gateway.path
+    },
+    "list_api_gateway_resource" = {
+      resource_id   = aws_api_gateway_resource.api_gateway_rest_api_id_resources.id
+      resource_path = aws_api_gateway_resource.api_gateway_rest_api_id_resources.path
+    }
+  }
 }
 
 resource "aws_api_gateway_resource" "lambda" {
@@ -358,25 +284,18 @@ resource "aws_api_gateway_resource" "api_gateway_rest_api_id_resources" {
 }
 
 resource "aws_api_gateway_deployment" "dev_deployment" {
-  depends_on  = [module.api_list_lambdas.gateway_integration]
+  depends_on  = [module.api_gateway_rest_api_id_methods.gateway_integration]
   rest_api_id = aws_api_gateway_rest_api.resource_api.id
   stage_name  = "dev"
 
   triggers = {
     redeployment = sha1(join(",", list(
-      jsonencode(module.api_list_lambdas.gateway_integration),
-      jsonencode(module.api_get_lambda.gateway_integration),
-      jsonencode(module.api_get_lambda_metrics.gateway_integration),
-      jsonencode(module.api_get_lambda_alarms.gateway_integration),
-      jsonencode(module.api_list_cloud_watch_alarms.gateway_integration),
-      jsonencode(module.api_get_cloud_watch_alarm.gateway_integration),
-      jsonencode(module.api_list_api_gateway.gateway_integration),
-      jsonencode(module.api_list_api_gateway_rest_api_id_resource.gateway_integration)
+      jsonencode(module.api_gateway_rest_api_id_methods.gateway_integration)
     )))
   }
 
   lifecycle {
-    create_before_destroy = true
+    create_before_destroy = false
   }
 }
 
