@@ -11,7 +11,7 @@ resource "aws_lambda_function" "lambdas" {
 
   role = aws_iam_role.lambda_exec[each.key].arn
 
-  layers = [var.dependencies_layer_arn]
+  layers = [aws_lambda_layer_version.dependencies.arn]
 
   tracing_config {
     mode = "Active"
@@ -72,4 +72,10 @@ module "lambda_permissions" {
   role_name = values(aws_iam_role.lambda_exec)[*].name
   project    = var.project
   account_id = var.account_id
+}
+
+resource "aws_lambda_layer_version" "dependencies" {
+  layer_name = "Dependencies"
+  s3_bucket  = var.bucket
+  s3_key     = "ara${var.app_version}/dependencies.zip"
 }
