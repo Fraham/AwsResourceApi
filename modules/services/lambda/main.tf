@@ -77,5 +77,5 @@ module "lambda_permissions" {
 resource "aws_lambda_layer_version" "dependencies" {
   layer_name = "Dependencies"
   s3_bucket  = var.bucket
-  s3_key     = "ara${var.app_version}/dependencies.zip"
+  s3_key     = "${lower(var.project)}${var.app_version}/dependencies.zip"
 }
