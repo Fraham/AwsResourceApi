@@ -203,6 +203,24 @@ EOF
   ]
 }
 EOF
+    },
+    "get_s3_bucket_logging" = {
+      lambda_name = "GetS3BucketLogging"
+      handler     = "getS3BucketLogging.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": [
+            "s3:GetBucketLogging"
+        ],
+        "Resource": "*"
+    }
+  ]
+}
+EOF
     }
   }
 
@@ -270,6 +288,10 @@ module "api_gateway_rest_api_id_methods" {
     "get_s3_bucket_location" = {
       resource_id   = aws_api_gateway_resource.s3_bucket_name_location.id
       resource_path = aws_api_gateway_resource.s3_bucket_name_location.path
+    },
+    "get_s3_bucket_logging" = {
+      resource_id   = aws_api_gateway_resource.s3_bucket_name_logging.id
+      resource_path = aws_api_gateway_resource.s3_bucket_name_logging.path
     }
   }
 }
@@ -344,6 +366,12 @@ resource "aws_api_gateway_resource" "s3_bucket_name_location" {
   rest_api_id = aws_api_gateway_rest_api.resource_api.id
   parent_id   = aws_api_gateway_resource.s3_bucket_name.id
   path_part   = "location"
+}
+
+resource "aws_api_gateway_resource" "s3_bucket_name_logging" {
+  rest_api_id = aws_api_gateway_rest_api.resource_api.id
+  parent_id   = aws_api_gateway_resource.s3_bucket_name.id
+  path_part   = "logging"
 }
 
 resource "aws_api_gateway_deployment" "dev_deployment" {
