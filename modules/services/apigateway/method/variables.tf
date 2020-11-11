@@ -3,16 +3,6 @@ variable "rest_api_id" {
   description = "The id of the rest"
 }
 
-variable "resource_id" {
-  type        = string
-  description = "The id for the AWS account"
-}
-
-variable "resource_path" {
-  type        = string
-  description = ""
-}
-
 variable "region" {
       type        = string
   description = ""
@@ -23,12 +13,13 @@ variable "account_id" {
   description = "The id for the AWS account"
 }
 
-variable "function_name" {
-  type        = string
-  description = ""
+variable "lambdas"{
+
 }
 
-variable "function_invoke_arn" {
-  type        = string
-  description = ""
+variable "methods"{
+    type = map
 }
+
+
+

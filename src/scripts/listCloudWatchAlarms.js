@@ -18,7 +18,7 @@ exports.handler = async (event) => {
         });
 
         var params = {
-            MaxRecords: 10,
+            MaxRecords: 5,
             AlarmTypes: [
                 "CompositeAlarm",
                 "MetricAlarm"

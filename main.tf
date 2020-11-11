@@ -166,6 +166,25 @@ EOF
   ]
 }
 EOF
+    },
+    "list_s3_buckets" = {
+      lambda_name = "ListS3Buckets"
+      handler     = "listS3Buckets.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": [
+            "s3:ListAllMyBuckets",
+            "s3:ListBucket"
+        ],
+        "Resource": "*"
+    }
+  ]
+}
+EOF
     }
   }
 
@@ -186,7 +205,7 @@ resource "aws_api_gateway_rest_api" "resource_api" {
 }
 
 module "api_gateway_rest_api_id_methods" {
-  source = "./modules/services/apigateway/method2"
+  source = "./modules/services/apigateway/method"
 
   region      = var.region
   account_id  = data.aws_caller_identity.current.account_id
@@ -225,6 +244,10 @@ module "api_gateway_rest_api_id_methods" {
     "list_api_gateway_resource" = {
       resource_id   = aws_api_gateway_resource.api_gateway_rest_api_id_resources.id
       resource_path = aws_api_gateway_resource.api_gateway_rest_api_id_resources.path
+    },
+    "list_s3_buckets" = {
+      resource_id   = aws_api_gateway_resource.s3_bucket.id
+      resource_path = aws_api_gateway_resource.s3_bucket.path
     }
   }
 }
@@ -281,6 +304,12 @@ resource "aws_api_gateway_resource" "api_gateway_rest_api_id_resources" {
   rest_api_id = aws_api_gateway_rest_api.resource_api.id
   parent_id   = aws_api_gateway_resource.api_gateway_rest_api_id.id
   path_part   = "resource"
+}
+
+resource "aws_api_gateway_resource" "s3_bucket" {
+  rest_api_id = aws_api_gateway_rest_api.resource_api.id
+  parent_id   = aws_api_gateway_rest_api.resource_api.root_resource_id
+  path_part   = "s3bucket"
 }
 
 resource "aws_api_gateway_deployment" "dev_deployment" {

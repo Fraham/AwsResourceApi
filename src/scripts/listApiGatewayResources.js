@@ -60,14 +60,14 @@ exports.handler = async (event) => {
 
     const restApiId = helper.getParameter(event, "restApiId");
 
-    var listAllApiGatewaysPromisResourcee = listAllApiGatewayResources(restApiId);
+    var listAllApiGatewaysPromisResource = listAllApiGatewayResources(restApiId);
 
-    var listAllApiGatewaysResulResourcet = await listAllApiGatewaysPromisResourcee;
+    var listAllApiGatewaysResulResource = await listAllApiGatewaysPromisResource;
 
-    console.log(listAllApiGatewaysResulResourcet);
+    console.log(listAllApiGatewaysResulResource);
 
     return {
         statusCode: 200,
-        body: JSON.stringify(listAllApiGatewaysResulResourcet)
+        body: JSON.stringify(listAllApiGatewaysResulResource)
     };
 };
