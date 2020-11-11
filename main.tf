@@ -185,6 +185,24 @@ EOF
   ]
 }
 EOF
+    },
+    "get_s3_bucket_location" = {
+      lambda_name = "GetS3BucketLocation"
+      handler     = "getS3BucketLocation.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": [
+            "s3:GetBucketLocation"
+        ],
+        "Resource": "*"
+    }
+  ]
+}
+EOF
     }
   }
 
@@ -248,6 +266,10 @@ module "api_gateway_rest_api_id_methods" {
     "list_s3_buckets" = {
       resource_id   = aws_api_gateway_resource.s3_bucket.id
       resource_path = aws_api_gateway_resource.s3_bucket.path
+    },
+    "get_s3_bucket_location" = {
+      resource_id   = aws_api_gateway_resource.s3_bucket_name_location.id
+      resource_path = aws_api_gateway_resource.s3_bucket_name_location.path
     }
   }
 }
@@ -310,6 +332,18 @@ resource "aws_api_gateway_resource" "s3_bucket" {
   rest_api_id = aws_api_gateway_rest_api.resource_api.id
   parent_id   = aws_api_gateway_rest_api.resource_api.root_resource_id
   path_part   = "s3bucket"
+}
+
+resource "aws_api_gateway_resource" "s3_bucket_name" {
+  rest_api_id = aws_api_gateway_rest_api.resource_api.id
+  parent_id   = aws_api_gateway_resource.s3_bucket.id
+  path_part   = "{bucketname}"
+}
+
+resource "aws_api_gateway_resource" "s3_bucket_name_location" {
+  rest_api_id = aws_api_gateway_rest_api.resource_api.id
+  parent_id   = aws_api_gateway_resource.s3_bucket_name.id
+  path_part   = "location"
 }
 
 resource "aws_api_gateway_deployment" "dev_deployment" {
