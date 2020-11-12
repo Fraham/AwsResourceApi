@@ -221,6 +221,24 @@ EOF
   ]
 }
 EOF
+    },
+    "get_s3_bucket_tagging" = {
+      lambda_name = "GetS3BucketTagging"
+      handler     = "getS3BucketTagging.handler"
+      policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": [
+            "s3:GetBucketTagging"
+        ],
+        "Resource": "*"
+    }
+  ]
+}
+EOF
     }
   }
 
@@ -292,6 +310,10 @@ module "api_gateway_rest_api_id_methods" {
     "get_s3_bucket_logging" = {
       resource_id   = aws_api_gateway_resource.s3_bucket_name_logging.id
       resource_path = aws_api_gateway_resource.s3_bucket_name_logging.path
+    },
+    "get_s3_bucket_tagging" = {
+      resource_id   = aws_api_gateway_resource.s3_bucket_name_tagging.id
+      resource_path = aws_api_gateway_resource.s3_bucket_name_tagging.path
     }
   }
 }
@@ -372,6 +394,12 @@ resource "aws_api_gateway_resource" "s3_bucket_name_logging" {
   rest_api_id = aws_api_gateway_rest_api.resource_api.id
   parent_id   = aws_api_gateway_resource.s3_bucket_name.id
   path_part   = "logging"
+}
+
+resource "aws_api_gateway_resource" "s3_bucket_name_tagging" {
+  rest_api_id = aws_api_gateway_rest_api.resource_api.id
+  parent_id   = aws_api_gateway_resource.s3_bucket_name.id
+  path_part   = "tagging"
 }
 
 resource "aws_api_gateway_deployment" "dev_deployment" {
