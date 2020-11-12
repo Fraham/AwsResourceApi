@@ -31,12 +31,28 @@ exports.handler = async (event) => {
 
     var getS3BucketPolicyPromise = getS3BucketPolicy(bucketName);
 
-    var getS3BucketPolicyResult = await getS3BucketPolicyPromise;
+    var result;
+    var statusCode;
 
-    console.log(getS3BucketPolicyResult);
+    await getS3BucketPolicyPromise.then((promiseResult) => {
+        result = promiseResult;
+
+        statusCode = 200;
+    })
+    .catch((error) => {
+        console.error(error);
+
+        result = {
+            error: error.code
+        };
+
+        statusCode = error.statusCode;
+    });
+
+    console.log(result);
 
     return {
-        statusCode: 200,
-        body: JSON.stringify(getS3BucketPolicyResult)
+        statusCode: statusCode,
+        body: JSON.stringify(result)
     };
 };

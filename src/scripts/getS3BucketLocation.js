@@ -31,16 +31,37 @@ exports.handler = async (event) => {
 
     var getS3BucketLocationPromise = getS3BucketLocation(bucketName);
 
-    var getS3BucketLocationResult = await getS3BucketLocationPromise;
+    var result;
+    var statusCode;
 
-    console.log(getS3BucketLocationResult);
+    await getS3BucketLocationPromise
+        .then((promiseResult) => {
+            result = {
+                region: promiseResult.LocationConstraint ? promiseResult.LocationConstraint : "us-east-1"
+            };
 
-    var result = {
-        region: getS3BucketLocationResult.LocationConstraint ? getS3BucketLocationResult.LocationConstraint : us-east-1
-    };
+            statusCode = 200;
+        })
+        .catch((error) => {
+            console.error(error);
+
+            result = {
+                error: error.code
+            };
+
+            statusCode = error.statusCode;
+        });
+
+    console.log(result);
 
     return {
-        statusCode: 200,
+        statusCode: statusCode,
         body: JSON.stringify(result)
     };
 };
+
+if (process.env.IS_LOCAL) {
+    this.handler({
+        bucketName: "invalidBucketName"
+    });
+}

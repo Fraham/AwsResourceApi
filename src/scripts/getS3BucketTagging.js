@@ -31,20 +31,34 @@ exports.handler = async (event) => {
 
     var getS3BucketTaggingPromise = getS3BucketTagging(bucketName);
 
-    var getS3BucketTaggingResult = await getS3BucketTaggingPromise;
+    var result;
+    var statusCode;
 
-    console.log(getS3BucketTaggingResult);
+    await getS3BucketTaggingPromise.then((promiseResult) => {
+        results = {
+            Tags: {}
+        };
 
-    var results = {
-        Tags: { }
-    };
+        promiseResult.TagSet.forEach(element => {
+            results.Tags[element.Key] = element.Value;
+        });
 
-    getS3BucketTaggingResult.TagSet.forEach(element => {
-        results.Tags[element.Key] = element.Value;
-    });
+        statusCode = 200;
+    })
+        .catch((error) => {
+            console.error(error);
+
+            result = {
+                error: error.code
+            };
+
+            statusCode = error.statusCode;
+        });
+
+    console.log(result);
 
     return {
-        statusCode: 200,
-        body: JSON.stringify(results)
+        statusCode: statusCode,
+        body: JSON.stringify(result)
     };
 };

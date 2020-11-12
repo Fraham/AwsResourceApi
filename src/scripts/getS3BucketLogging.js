@@ -31,12 +31,28 @@ exports.handler = async (event) => {
 
     var getS3BucketLoggingPromise = getS3BucketLogging(bucketName);
 
-    var getS3BucketLoggingResult = await getS3BucketLoggingPromise;
+    var result;
+    var statusCode;
 
-    console.log(getS3BucketLoggingResult);
+    await getS3BucketLoggingPromise.then((promiseResult) => {
+        result = promiseResult;
+
+        statusCode = 200;
+    })
+    .catch((error) => {
+        console.error(error);
+
+        result = {
+            error: error.code
+        };
+
+        statusCode = error.statusCode;
+    });
+
+    console.log(result);
 
     return {
-        statusCode: 200,
-        body: JSON.stringify(getS3BucketLoggingResult)
+        statusCode: statusCode,
+        body: JSON.stringify(result)
     };
 };
